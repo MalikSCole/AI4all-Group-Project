@@ -3,3 +3,7 @@ venv/
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
+
+# Model Evaluation Outputs
+metrics_report.md
+metrics_summary.csv
