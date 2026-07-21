@@ -1,4 +1,7 @@
-streamlit>=1.37
+# Dependencies for the Nutrition5k calorie classifier.
+# Install:  pip install -r requirements.txt
+
+streamlit>=1.60
 torch>=2.3
 torchvision>=0.18
 pillow>=10.3

@@ -31,12 +31,16 @@ def load_model() -> CalorieClassifier | None:
     """Cached so the checkpoint is read once, not on every interaction."""
     try:
         return CalorieClassifier.load(CHECKPOINT, SCALER)
-    except (FileNotFoundError, ValueError):
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        st.session_state["model_load_error"] = str(exc)
         return None
 
 
 def render_missing_weights() -> None:
-    st.error("Model weights not found — the app cannot make predictions.")
+    st.error("Model could not be loaded — the app cannot make predictions.")
+    error = st.session_state.get("model_load_error")
+    if error:
+        st.code(error)
     st.markdown(
         f"""
 The trained weights are **not in this repository**: `Seeded Model.ipynb` saves them to
@@ -56,11 +60,12 @@ Place both in `{CHECKPOINT.parent.relative_to(REPO_ROOT)}/`. Full procedure: `EX
 
 def render_honest_caveats(metadata: dict) -> None:
     test_acc = metadata.get("test_accuracy")
+    reported_accuracy = f"{test_acc:.1%}" if isinstance(test_acc, (int, float)) else "not available"
     with st.expander("How much should you trust this? (read before demoing)", expanded=False):
         st.markdown(
             f"""
-**Reported test accuracy: {test_acc:.1%}** against a 33.3% random baseline on three balanced
-classes — roughly 2.2x baseline. That is a real result.
+**Reported test accuracy: {reported_accuracy}** against a 33.3% random baseline on three balanced
+classes. That is a real result — roughly 2.2x baseline.
 
 **Treat it as optimistic rather than a clean held-out estimate.** Test accuracy appears
 several times across our notebooks (66.9%, 70.0%, 71.3%, 71.5%, 72.3%) before this model's

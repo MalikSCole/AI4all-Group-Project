@@ -29,27 +29,18 @@ from PIL import Image
 from torch import nn
 from torchvision import transforms
 
-#: Must match `image_size` in the checkpoint.
+# Must match `image_size` in the checkpoint.
 IMAGE_SIZE = 224
 
-#: Ordinal targets: Low=[0,0], Medium=[1,0], High=[1,1].
+# Ordinal targets: Low=[0,0], Medium=[1,0], High=[1,1].
 CLASS_NAMES = ("Low", "Medium", "High")
 
-#: Order the StandardScaler was fit on. Do not reorder — inverse_transform is positional.
+# Order the StandardScaler was fit on. Do not reorder; inverse_transform is positional.
 REGRESSION_TARGETS = ("calories", "mass", "fat", "carb", "protein")
 
 
 class ExtraLayerOrdinalMultiTaskCNN224(nn.Module):
-    """Four conv blocks into a shared FC, then two heads.
-
-    Ordinal head (2 logits) rather than a 3-way softmax because the classes are ordered: Low <
-    Medium < High. A softmax treats confusing Low with High as no worse than confusing Low with
-    Medium. The ordinal encoding makes the model predict "is it above threshold 1?" and "above
-    threshold 2?", which bakes the ordering into the loss.
-
-    Regression head (5 outputs) is auxiliary: predicting calories/mass/fat/carb/protein gives the
-    shared trunk a richer signal than three class labels alone.
-    """
+    """Four conv blocks into a shared FC, then two heads."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -81,10 +72,7 @@ class ExtraLayerOrdinalMultiTaskCNN224(nn.Module):
 
 
 def eval_transform() -> transforms.Compose:
-    """Inference preprocessing. Mirrors `eval_transform_mt` in the notebook.
-
-    Resize + ToTensor only. See the module docstring on why there is no Normalize.
-    """
+    """Inference preprocessing. Mirrors `eval_transform_mt` in the notebook."""
     return transforms.Compose(
         [
             transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
@@ -94,23 +82,10 @@ def eval_transform() -> transforms.Compose:
 
 
 def decode_ordinal(ordinal_logits: torch.Tensor) -> tuple[int, bool]:
-    """Turn 2 threshold logits into a class index.
-
-    Returns `(class_index, is_consistent)`.
-
-    The notebook decodes with `(sigmoid(logits) >= 0.5).sum()`. That is standard, but it silently
-    accepts an **inconsistent** prediction: `[0, 1]` means "not above the first threshold, but
-    above the second," which is incoherent for ordered classes. Summing maps it to 1 (Medium) as
-    if nothing happened.
-
-    We reproduce the notebook's class index exactly — changing it would make this app disagree
-    with the reported 74.1% — but we also return whether the thresholds were coherent, so the UI
-    can say when the model is confused rather than hiding it behind a confident label.
-    """
+    """Turn 2 threshold logits into a class index."""
     probabilities = torch.sigmoid(ordinal_logits)
     passed = (probabilities >= 0.5).int()
     class_index = int(passed.sum().item())
-    # Coherent patterns: [0,0], [1,0], [1,1]. Incoherent: [0,1].
     is_consistent = not (passed[0].item() == 0 and passed[1].item() == 1)
     return class_index, is_consistent
 
@@ -121,8 +96,6 @@ class Prediction:
     class_name: str
     threshold_probabilities: tuple[float, float]
     is_consistent: bool
-    #: Only populated when the scaler is available; otherwise the raw head output is
-    #: standardized and meaningless as nutrition figures.
     nutrition: dict[str, float] | None
 
 
@@ -139,14 +112,9 @@ class CalorieClassifier:
     def load(cls, checkpoint_path: Path | str, scaler_path: Path | str | None = None) -> CalorieClassifier:
         checkpoint_path = Path(checkpoint_path)
         if not checkpoint_path.exists():
-            raise FileNotFoundError(
-                f"No checkpoint at {checkpoint_path}. The weights are NOT in this repo — they "
-                f"were written to /kaggle/working/ and are not committed. See EXPORT_WEIGHTS.md."
-            )
+            raise FileNotFoundError(f"No checkpoint at {checkpoint_path}.")
 
-        # weights_only=False: the checkpoint is a dict of metadata alongside the tensors, and we
-        # wrote it ourselves. Never point this at a checkpoint from an untrusted source —
-        # unpickling arbitrary files executes arbitrary code.
+        # weights_only=False: this checkpoint includes metadata alongside tensors.
         checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
         if "model_state_dict" not in checkpoint:
@@ -180,8 +148,6 @@ class CalorieClassifier:
 
         nutrition: dict[str, float] | None = None
         if self.scaler is not None:
-            # The regression head was trained on StandardScaler-transformed targets, so its raw
-            # output is in standardized units. Reporting it directly would show "calories: -0.4".
             unscaled = self.scaler.inverse_transform(regression_output.numpy())[0]
             nutrition = dict(zip(REGRESSION_TARGETS, (float(v) for v in unscaled), strict=True))
 
