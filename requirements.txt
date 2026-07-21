@@ -1,0 +1,8 @@
+streamlit>=1.37
+torch>=2.3
+torchvision>=0.18
+pillow>=10.3
+numpy>=1.26
+matplotlib>=3.9
+joblib>=1.4
+scikit-learn>=1.5

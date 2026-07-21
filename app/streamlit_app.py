@@ -1,9 +1,10 @@
-"""Streamlit deployment for the Nutrition5k calorie classifier.
+"""Streamlit deployment for the Nutrition5k calorie classifier — Week 10 deliverable.
 
 Run:  streamlit run app/streamlit_app.py
 
-Week 10 deliverable. Loads the packaged checkpoint from 'Seeded Model.ipynb' and classifies an
-uploaded food photo as Low / Medium / High calorie.
+Loads the packaged checkpoint produced by the final cells of `Seeded Model.ipynb` and
+classifies an uploaded food photo as Low / Medium / High calorie. If the weights are missing,
+the app explains exactly how to export them (see also EXPORT_WEIGHTS.md).
 """
 
 from __future__ import annotations
@@ -38,17 +39,17 @@ def render_missing_weights() -> None:
     st.error("Model weights not found — the app cannot make predictions.")
     st.markdown(
         f"""
-The trained weights are **not in this repository**. They were written to `/kaggle/working/`
-during training, which Kaggle wipes when the session ends, and were never committed.
+The trained weights are **not in this repository**: `Seeded Model.ipynb` saves them to
+`/kaggle/working/`, which Kaggle wipes when the session ends.
 
-**To fix:** open `Seeded Model.ipynb` on Kaggle, run it, and download from the output panel:
+**To fix:** open `Seeded Model.ipynb` on Kaggle, use **Save & Run All (Commit)** — running
+interactively and closing the tab does not persist the output — then download from the
+completed version's Output tab:
 
 - `final_ordinal_multitask_model.pth`
 - `regression_target_scaler.pkl`
 
-Place both in `{CHECKPOINT.parent.relative_to(REPO_ROOT)}/`.
-
-See `EXPORT_WEIGHTS.md` for the full procedure.
+Place both in `{CHECKPOINT.parent.relative_to(REPO_ROOT)}/`. Full procedure: `EXPORT_WEIGHTS.md`.
 """
     )
 
@@ -59,24 +60,21 @@ def render_honest_caveats(metadata: dict) -> None:
         st.markdown(
             f"""
 **Reported test accuracy: {test_acc:.1%}** against a 33.3% random baseline on three balanced
-classes. That is a real result — roughly 2.2x baseline.
+classes — roughly 2.2x baseline. That is a real result.
 
-**But treat it as optimistic, not as a clean held-out estimate.** The test set was evaluated
-against repeatedly while the architecture was being iterated (accuracies of 66.9%, 70.0%, 71.3%,
-71.5%, 72.3% appear across the notebooks before this model's 74.1%). Once you have looked at the
-test set several times and kept the change that improved it, you have selected on it, and it is
-no longer measuring generalization. The honest framing is *"we improved against the test set
-across iterations, so the true out-of-sample number is likely lower."*
+**Treat it as optimistic rather than a clean held-out estimate.** Test accuracy appears
+several times across our notebooks (66.9%, 70.0%, 71.3%, 71.5%, 72.3%) before this model's
+74.1% — and once you have checked the test set repeatedly and kept the changes that improved
+it, the test number partly measures the search rather than generalization.
 
-**What was verified clean:** `dish-level-data-leakage-check.ipynb` confirms 0 `dish_id` overlap
-between train/val/test. Since each dish has exactly one overhead RGB image, the split is sound at
-the dish level.
+**What was verified clean:** `dish-level-data-leakage-check.ipynb` confirms 0 `dish_id`
+overlap between train/val/test — the split is sound at the dish level.
 
 **Where it will be least accurate:** Nutrition5k was captured in a controlled setting with a
-specific culinary range and a fixed overhead camera. Photos from a phone at an angle, in
-different lighting, of cuisines the dataset under-represents — all fall outside what the model
-saw. Food datasets skew Western by default, so the people this serves worst are those whose food
-it never saw.
+fixed overhead camera and a specific culinary range. Phone photos at an angle, different
+lighting, and cuisines the dataset under-represents all fall outside what the model saw. Food
+datasets skew Western by default, so the people this serves worst are those whose food it
+never saw.
 
 **This is a class project, not a dietary tool.** Do not make food decisions from it.
 """
@@ -132,11 +130,27 @@ def main() -> None:
         f"{CLASS_NAMES[1]}=[1,0], {CLASS_NAMES[2]}=[1,1]."
     )
 
+    with st.expander("Where is the model looking? (Grad-CAM)", expanded=False):
+        with st.spinner("Computing gradient heatmaps..."):
+            from src.models.gradcam import explain
+
+            explanations = explain(classifier.model, image)
+        cols = st.columns(len(explanations))
+        for col, (label, heat_img) in zip(cols, explanations):
+            col.image(heat_img, caption=label, use_container_width=True)
+        st.caption(
+            "Grad-CAM: gradient-weighted evidence for each ordinal threshold, over the last "
+            "conv block. Bright regions pushed that threshold's logit up. Read it as a "
+            "diagnostic, not proof of reasoning — heat on the plate is what you want to see; "
+            "heat on the table edge or shadows means the model is reading the scene, not "
+            "the food."
+        )
+
     if prediction.nutrition is not None:
         st.markdown("**Auxiliary regression estimates**")
         cols = st.columns(len(prediction.nutrition))
         units = {"calories": "kcal", "mass": "g", "fat": "g", "carb": "g", "protein": "g"}
-        for col, (name, value) in zip(cols, prediction.nutrition.items(), strict=True):
+        for col, (name, value) in zip(cols, prediction.nutrition.items()):
             col.metric(name.capitalize(), f"{value:.0f} {units.get(name, '')}")
         st.caption(
             "These come from the auxiliary head, which exists to give the shared trunk a richer "
