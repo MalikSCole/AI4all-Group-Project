@@ -7,7 +7,7 @@ from sklearn.preprocessing import label_binarize
 
 def calculate_one_vs_all_metrics(cm, class_names):
     """
-    Computes TP, TN, FP, FN, Accuracy, Precision, Recall, Specificity, 
+    Calculates TP, TN, FP, FN, Accuracy, Precision, Recall, Specificity, 
     and F1-Score for each class in a multi-class confusion matrix.
     """
     total = np.sum(cm)
