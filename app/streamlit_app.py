@@ -132,14 +132,14 @@ def render_intro() -> None:
 # ---------------------------------------------------------------------------
 
 def render_photo_guidance() -> None:
-    st.markdown("### Upload your meal photo")
+    st.sidebar.markdown("### Photo Guidelines")
 
-    st.write(
+    st.sidebar.write(
         "For the best result, use a clear picture showing one complete plate "
         "of food."
     )
 
-    with st.expander("Tips for taking a better photo"):
+    with st.sidebar.expander("Tips for taking a better photo"):
         st.markdown(
             """
 - Show the entire plate.
@@ -167,7 +167,7 @@ def render_model_information(metadata: dict) -> None:
         else "not available"
     )
 
-    with st.expander("How reliable is this app?"):
+    with st.sidebar.expander("How reliable is this app?"):
         st.markdown(
             f"""
 During project testing, the model achieved approximately
@@ -197,7 +197,7 @@ Everyday phone photos may produce less reliable results.
             "diabetes management, allergy decisions, or exact nutrition tracking."
         )
 
-    with st.expander("Technical evaluation notes"):
+    with st.sidebar.expander("Technical evaluation notes"):
         st.markdown(
             f"""
 - **Reported test accuracy:** {reported_accuracy}
@@ -399,30 +399,26 @@ def render_nutrition_estimates(prediction) -> None:
             "training and were not optimized as the primary output of the app."
         )
 
-        units = {
-            "calories": "kcal",
-            "mass": "g",
-            "fat": "g",
-            "carb": "g",
-            "protein": "g",
+        import pandas as pd
+
+        # Display key metrics first
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Calories", f"{prediction.nutrition.get('calories', 0):.0f} kcal")
+        with col2:
+            st.metric("Estimated weight", f"{prediction.nutrition.get('mass', 0):.0f} g")
+
+        # Visualization for macronutrients
+        st.markdown("#### Macronutrient Breakdown")
+        macros = {
+            "Fat (g)": prediction.nutrition.get("fat", 0),
+            "Carbohydrates (g)": prediction.nutrition.get("carb", 0),
+            "Protein (g)": prediction.nutrition.get("protein", 0)
         }
-
-        display_names = {
-            "calories": "Calories",
-            "mass": "Estimated weight",
-            "fat": "Fat",
-            "carb": "Carbohydrates",
-            "protein": "Protein",
-        }
-
-        nutrition_items = list(prediction.nutrition.items())
-        cols = st.columns(len(nutrition_items))
-
-        for col, (name, value) in zip(cols, nutrition_items):
-            col.metric(
-                label=display_names.get(name, name.capitalize()),
-                value=f"{value:.0f} {units.get(name, '')}".strip(),
-            )
+        
+        df = pd.DataFrame(list(macros.items()), columns=["Macronutrient", "Grams"])
+        df.set_index("Macronutrient", inplace=True)
+        st.bar_chart(df)
 
         st.caption(
             "These estimates should only be viewed as a rough model diagnostic. "
@@ -436,7 +432,7 @@ def render_nutrition_estimates(prediction) -> None:
 # ---------------------------------------------------------------------------
 
 def render_about_section() -> None:
-    with st.expander("About this project"):
+    with st.sidebar.expander("About this project"):
         st.markdown(
             """
 This application uses a convolutional neural network trained with food images
@@ -515,31 +511,41 @@ def main() -> None:
         )
         return
 
-    st.markdown("### Your uploaded photo")
-    st.image(
-        image,
-        caption="Meal submitted for analysis",
-        use_container_width=True,
-    )
+    # Create Side-by-Side layout
+    col_img, col_res = st.columns([1, 1.2], gap="large")
 
-    with st.spinner("Analyzing the meal photo..."):
-        try:
-            prediction = classifier.predict(image)
-        except (ValueError, RuntimeError) as exc:
-            st.error(
-                "The model could not analyze this image. Try uploading a "
-                "different photo with clearer lighting and the full plate visible."
-            )
+    with col_img:
+        st.markdown("### Uploaded Photo")
+        st.image(
+            image,
+            use_container_width=True,
+            caption="Meal submitted for analysis"
+        )
 
-            with st.expander("Technical error information"):
-                st.code(str(exc))
+    with col_res:
+        with st.spinner("Analyzing the meal photo..."):
+            try:
+                prediction = classifier.predict(image)
+            except (ValueError, RuntimeError) as exc:
+                st.error(
+                    "The model could not analyze this image. Try uploading a "
+                    "different photo with clearer lighting and the full plate visible."
+                )
 
-            return
+                with st.expander("Technical error information"):
+                    st.code(str(exc))
 
-    render_prediction_result(prediction)
-    render_prediction_details(prediction)
+                return
+
+        render_prediction_result(prediction)
+        render_prediction_details(prediction)
+
+    # Render additional details below the split
+    st.divider()
     render_visual_explanation(classifier, image)
     render_nutrition_estimates(prediction)
+    
+    # Information renders on the sidebar because we updated the functions
     render_model_information(classifier.metadata)
     render_about_section()
 
