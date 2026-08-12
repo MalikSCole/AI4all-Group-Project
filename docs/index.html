@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Food Image Calorie Estimator</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --panel: #fffaf3;
+      --panel-2: #fdf4e8;
+      --text: #1f1a17;
+      --muted: #5e544d;
+      --accent: #bb5a2a;
+      --accent-2: #2c6e49;
+      --accent-3: #1f4e5f;
+      --border: rgba(31, 26, 23, 0.1);
+      --shadow: 0 18px 50px rgba(72, 42, 25, 0.12);
+      --radius: 22px;
+      --radius-sm: 16px;
+      --max: 1140px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Georgia", "Times New Roman", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(187, 90, 42, 0.14), transparent 32%),
+        radial-gradient(circle at top right, rgba(44, 110, 73, 0.14), transparent 28%),
+        linear-gradient(180deg, #fbf7f1 0%, #f4efe7 100%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #fffaf3 0%, #f8ecdc 100%);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      padding: 34px;
+      margin-bottom: 22px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -12% -30% auto;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(187, 90, 42, 0.16) 0%, rgba(187, 90, 42, 0.04) 55%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font: 700 0.78rem/1.2 Arial, Helvetica, sans-serif;
+      color: var(--accent);
+      background: rgba(187, 90, 42, 0.08);
+      border: 1px solid rgba(187, 90, 42, 0.14);
+      border-radius: 999px;
+      padding: 8px 12px;
+      margin-bottom: 18px;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.3rem, 5vw, 4.5rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .subtitle {
+      margin-top: 18px;
+      font: 600 clamp(1.1rem, 2vw, 1.4rem)/1.4 Arial, Helvetica, sans-serif;
+      color: var(--accent-3);
+      max-width: 60ch;
+    }
+
+    .description {
+      margin-top: 14px;
+      max-width: 68ch;
+      font: 1rem/1.75 Arial, Helvetica, sans-serif;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      text-decoration: none;
+      font: 700 0.95rem/1 Arial, Helvetica, sans-serif;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .button.secondary {
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--text);
+      border-color: rgba(31, 26, 23, 0.12);
+    }
+
+    .button.ghost {
+      background: transparent;
+      color: var(--text);
+      border-color: rgba(31, 26, 23, 0.16);
+    }
+
+    .content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section {
+      background: rgba(255, 250, 243, 0.8);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      backdrop-filter: blur(6px);
+    }
+
+    .section h2 {
+      font: 700 clamp(1.45rem, 2.4vw, 2rem)/1.15 Arial, Helvetica, sans-serif;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .section p,
+    .section li {
+      font: 1rem/1.75 Arial, Helvetica, sans-serif;
+      color: var(--muted);
+    }
+
+    .section ul {
+      margin: 14px 0 0;
+      padding-left: 18px;
+    }
+
+    .section li + li {
+      margin-top: 8px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(31, 26, 23, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      min-height: 100%;
+    }
+
+    .card h3 {
+      font: 700 1.05rem/1.3 Arial, Helvetica, sans-serif;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .card p {
+      font-size: 0.98rem;
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 146px;
+      background: linear-gradient(180deg, #fffaf3 0%, #f8efe1 100%);
+    }
+
+    .metric .value {
+      font: 800 clamp(1.6rem, 3vw, 2.4rem)/1 Arial, Helvetica, sans-serif;
+      color: var(--accent);
+      letter-spacing: -0.04em;
+    }
+
+    .metric .label {
+      font: 700 0.8rem/1.2 Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-3);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(44, 110, 73, 0.1);
+      color: var(--accent-2);
+      font: 700 0.78rem/1 Arial, Helvetica, sans-serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .footnote {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: rgba(187, 90, 42, 0.06);
+      border-radius: 12px;
+      color: var(--muted);
+      font: 0.95rem/1.7 Arial, Helvetica, sans-serif;
+    }
+
+    .references {
+      display: grid;
+      gap: 12px;
+    }
+
+    .reference {
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--panel-2);
+      border: 1px solid rgba(31, 26, 23, 0.08);
+      font: 0.96rem/1.65 Arial, Helvetica, sans-serif;
+      color: var(--muted);
+    }
+
+    .reference strong {
+      color: var(--text);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+    }
+
+    .placeholder-box {
+      border: 1px dashed rgba(31, 26, 23, 0.18);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.45);
+      padding: 18px;
+      min-height: 120px;
+      display: grid;
+      align-items: center;
+      color: var(--muted);
+      font: 0.95rem/1.6 Arial, Helvetica, sans-serif;
+    }
+
+    .small {
+      font-size: 0.92rem;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-title p {
+      font-size: 0.92rem;
+      max-width: 48ch;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2,
+      .grid-3,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 24px;
+      }
+
+      .page {
+        width: min(calc(100% - 22px), var(--max));
+        padding-top: 14px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        border-radius: 24px;
+      }
+
+      .section {
+        padding: 18px;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .actions {
+        gap: 10px;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">AI4ALL Final Project</div>
+      <h1>Food Image Calorie Estimator</h1>
+      <p class="subtitle">Can AI estimate a meal’s calorie range from just a food photo?</p>
+      <p class="description">
+        This project uses computer vision to classify food images into Low, Medium, and High calorie ranges using the Nutrition5k dataset.
+      </p>
+      <div class="actions" aria-label="Project links">
+        <a class="button primary" href="https://calorieestimator.streamlit.app/" target="_blank" rel="noreferrer">Streamlit App</a>
+        <a class="button secondary" href="#" aria-label="GitHub Repository placeholder">GitHub Repository</a>
+        <a class="button ghost" href="#" aria-label="Final Presentation placeholder">Final Presentation</a>
+      </div>
+    </section>
+
+    <div class="content">
+      <section class="section">
+        <div class="section-title">
+          <h2>Project Overview</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Why this problem matters</h3>
+            <p>Calorie tracking is time-consuming. Food photos are easy to capture, but calories are difficult to estimate from appearance alone because portion size, hidden ingredients, oils, sauces, and macros affect nutrition.</p>
+          </div>
+          <div class="card">
+            <h3>Research question</h3>
+            <p>To what extent can a CNN classify food images into Low, Medium, and High calorie ranges?</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Dataset</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="tag">Nutrition5k</div>
+            <h3>Dataset details</h3>
+            <ul>
+              <li>Created by Google Research and published at CVPR 2021.</li>
+              <li>Includes food images and nutrition labels such as calories, mass, fat, carbohydrates, and protein.</li>
+              <li>Our cleaned dataset used 3,244 matched overhead RGB images.</li>
+              <li>Calories were grouped into Low, Medium, and High classes.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Image placeholder</h3>
+            <div class="placeholder-box">
+              <!-- Add dataset preview image or class balance chart here later. -->
+              Add dataset preview image, class balance chart, or sample overhead food photos here later.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Model Approach</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Pipeline</h3>
+            <ul>
+              <li><strong>Algorithm:</strong> CNN-based supervised computer vision model</li>
+              <li><strong>Input:</strong> RGB food image</li>
+              <li><strong>Output:</strong> Low, Medium, or High calorie range</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Model evolution</h3>
+            <ul>
+              <li>Basic CNN: about 66% validation accuracy</li>
+              <li>Higher-resolution CNN: larger image input for more visual detail</li>
+              <li>Ordinal multi-task CNN: about 73% validation accuracy</li>
+              <li>Streamlit app: deployment prototype</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Results</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card metric">
+            <div>
+              <div class="label">Matched images</div>
+              <div class="value">3,244</div>
+            </div>
+            <p class="small">Matched overhead RGB images in the cleaned dataset.</p>
+          </div>
+          <div class="card metric">
+            <div>
+              <div class="label">Split quality</div>
+              <div class="value">0</div>
+            </div>
+            <p class="small">Dish-level overlap across train, validation, and test splits.</p>
+          </div>
+          <div class="card metric">
+            <div>
+              <div class="label">Validation accuracy</div>
+              <div class="value">66% → 73%</div>
+            </div>
+            <p class="small">Improvement across the model iterations.</p>
+          </div>
+        </div>
+        <div class="footnote">
+          Visuals such as calorie distribution, class balance, confusion matrix, training curves, and demo screenshots will be added later.
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Demo</h2>
+        </div>
+        <div class="split">
+          <div class="card">
+            <h3>What the app does</h3>
+            <p>The Streamlit app lets users upload a food image and receive a Low, Medium, or High calorie range prediction. The app also includes photo guidelines, prediction details, visual explanation, and experimental nutrition breakdowns.</p>
+          </div>
+          <div class="card">
+            <h3>Demo placeholder</h3>
+            <div class="placeholder-box">
+              <!-- Add app screenshot or demo GIF here later. -->
+              Add a Streamlit screenshot, screen recording thumbnail, or workflow diagram here later.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Limitations &amp; Bias</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Known limitations</h3>
+            <ul>
+              <li>Food photos may hide oils, sauces, ingredients, or exact portion size.</li>
+              <li>Nutrition5k may not fully represent all cuisines, home-cooked meals, or real-world phone photos.</li>
+              <li>Medium-calorie meals are harder because they can look similar to both Low and High meals.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Bias mitigation</h3>
+            <ul>
+              <li>Clean train/validation/test split.</li>
+              <li>0 dish overlap across splits.</li>
+              <li>Documented failure cases.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Impact</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <h3>More accessible nutrition awareness</h3>
+            <p>Image-based estimation makes nutrition awareness easier to approach in everyday settings.</p>
+          </div>
+          <div class="card">
+            <h3>Less manual input</h3>
+            <p>Users can get a rough idea of a meal without manually entering ingredients.</p>
+          </div>
+          <div class="card">
+            <h3>Connecting vision and nutrition</h3>
+            <p>The project shows how computer vision can connect everyday food images with nutrition information.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Next Steps</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Technical extensions</h3>
+            <ul>
+              <li>Add multimodal inputs such as side-view images or depth information.</li>
+              <li>Use pretrained depth models like MiDaS or Depth Anything to estimate depth maps.</li>
+              <li>Improve Medium-class performance.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Broader testing</h3>
+            <ul>
+              <li>Test more real-world food photos with different lighting, angles, cuisines, and backgrounds.</li>
+              <li>Compare results across image conditions and meal types.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">
+          <h2>Citations</h2>
+        </div>
+        <div class="references">
+          <div class="reference"><strong>Centers for Disease Control and Prevention.</strong> About Healthy Weight and Growth. https://www.cdc.gov/healthy-weight-growth/about/index.html</div>
+          <div class="reference"><strong>World Health Organization.</strong> Healthy Diet. https://www.who.int/news-room/fact-sheets/detail/healthy-diet</div>
+          <div class="reference"><strong>Thames, Q., Karpur, A., Norris, W., Xia, F., Panait, L., Weyand, T., &amp; Sim, J.</strong> Nutrition5k: Towards Automatic Nutritional Understanding of Generic Food. CVPR 2021. https://openaccess.thecvf.com/content/CVPR2021/papers/Thames_Nutrition5k_Towards_Automatic_Nutritional_Understanding_of_Generic_Food_CVPR_2021_paper.pdf</div>
+          <div class="reference"><strong>Lesokhin, G.</strong> Nutrition5k Dataset. Kaggle. https://www.kaggle.com/datasets/gillesokhin/nutrition5k-dataset/data</div>
+          <div class="reference"><strong>Han, Y., et al.</strong> DPF-Nutrition: Food Nutrition Estimation via Depth Prediction and Fusion. https://pmc.ncbi.nlm.nih.gov/articles/PMC10706621/</div>
+          <div class="reference"><strong>Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &amp; Batra, D.</strong> Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization. https://arxiv.org/abs/1610.02391</div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
