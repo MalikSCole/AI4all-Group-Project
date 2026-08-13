@@ -301,6 +301,32 @@
       font: 0.95rem/1.6 Arial, Helvetica, sans-serif;
     }
 
+    .dataset-preview {
+      display: grid;
+      gap: 12px;
+    }
+
+    .dataset-preview figure {
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid rgba(31, 26, 23, 0.08);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .dataset-preview img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .dataset-preview figcaption {
+      padding: 8px 10px;
+      font: 700 0.78rem/1.3 Arial, Helvetica, sans-serif;
+      color: var(--muted);
+      background: var(--panel-2);
+    }
+
     .small {
       font-size: 0.92rem;
     }
@@ -407,10 +433,20 @@
             </ul>
           </div>
           <div class="card">
-            <h3>Image placeholder</h3>
-            <div class="placeholder-box">
-              <!-- Add dataset preview image or class balance chart here later. -->
-              Add dataset preview image, class balance chart, or sample overhead food photos here later.
+            <h3>Dataset preview</h3>
+            <div class="dataset-preview">
+              <figure>
+                <img src="../plots/food_cuisine_distribution.png" alt="Food cuisine distribution chart">
+                <figcaption>Food cuisine distribution</figcaption>
+              </figure>
+              <figure>
+                <img src="../plots/food_types_distribution.png" alt="Food types distribution chart">
+                <figcaption>Food types distribution</figcaption>
+              </figure>
+              <figure>
+                <img src="../plots/dish_category_distribution.png" alt="Dish category distribution chart">
+                <figcaption>Dish category distribution</figcaption>
+              </figure>
             </div>
           </div>
         </div>
