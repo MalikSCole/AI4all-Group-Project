@@ -327,6 +327,34 @@
       background: var(--panel-2);
     }
 
+    .results-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .results-gallery figure {
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid rgba(31, 26, 23, 0.08);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .results-gallery img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .results-gallery figcaption {
+      padding: 10px 12px;
+      font: 700 0.82rem/1.3 Arial, Helvetica, sans-serif;
+      color: var(--muted);
+      background: var(--panel-2);
+    }
+
     .small {
       font-size: 0.92rem;
     }
@@ -347,7 +375,8 @@
     @media (max-width: 900px) {
       .grid-2,
       .grid-3,
-      .split {
+      .split,
+      .results-gallery {
         grid-template-columns: 1fr;
       }
 
@@ -505,7 +534,25 @@
           </div>
         </div>
         <div class="footnote">
-          Visuals such as calorie distribution, class balance, confusion matrix, training curves, and demo screenshots will be added later.
+          These evaluation visuals summarize model performance across classification quality and training progress.
+        </div>
+        <div class="results-gallery">
+          <figure>
+            <img src="evaluation/confusion_matrix_separate_heads.png" alt="Separate-heads model confusion matrix">
+            <figcaption>Confusion matrix</figcaption>
+          </figure>
+          <figure>
+            <img src="evaluation/roc_auc_curve.png" alt="ROC AUC curve">
+            <figcaption>ROC AUC curve</figcaption>
+          </figure>
+          <figure>
+            <img src="evaluation/training_accuracy.png" alt="Training accuracy curve">
+            <figcaption>Training accuracy</figcaption>
+          </figure>
+          <figure>
+            <img src="evaluation/training_loss.png" alt="Training loss curve">
+            <figcaption>Training loss</figcaption>
+          </figure>
         </div>
       </section>
 
